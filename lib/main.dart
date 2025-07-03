@@ -21,6 +21,7 @@ class _NewsScreenState extends State<NewsScreen> {
   bool isTranslating = false;
   String translationProgress = '';
 
+  // Replace with your actual NewsAPI key
   final String apiKey = '576605d717c24de7935e1ec07c03a38e';
 
   // Language translations for UI elements
@@ -36,7 +37,6 @@ class _NewsScreenState extends State<NewsScreen> {
       'readLess': 'Read Less',
       'errorLoading': 'Error loading news',
       'translationFailed': 'Translation failed',
-      'articleUrl': 'Article URL',
       'English': 'English',
       'Hindi': 'Hindi',
       'Marathi': 'Marathi',
@@ -52,7 +52,6 @@ class _NewsScreenState extends State<NewsScreen> {
       'readLess': 'कम पढ़ें',
       'errorLoading': 'समाचार लोड करने में त्रुटि',
       'translationFailed': 'अनुवाद असफल',
-      'articleUrl': 'लेख URL',
       'English': 'अंग्रेजी',
       'Hindi': 'हिंदी',
       'Marathi': 'मराठी',
@@ -68,7 +67,6 @@ class _NewsScreenState extends State<NewsScreen> {
       'readLess': 'कमी वाचा',
       'errorLoading': 'बातम्या लोड करण्यात त्रुटी',
       'translationFailed': 'भाषांतर अयशस्वी',
-      'articleUrl': 'लेख URL',
       'English': 'इंग्रजी',
       'Hindi': 'हिंदी',
       'Marathi': 'मराठी',
@@ -105,7 +103,7 @@ class _NewsScreenState extends State<NewsScreen> {
           isLoading = false;
         });
       } else {
-        throw Exception('Failed to load news');
+        throw Exception('Failed to load news: ${response.statusCode}');
       }
     } catch (e) {
       setState(() {
@@ -118,6 +116,8 @@ class _NewsScreenState extends State<NewsScreen> {
   }
 
   Future<void> translateArticles(String lang) async {
+    if (lang == selectedLanguage) return; // No need to translate if same language
+
     setState(() {
       isTranslating = true;
       translationProgress = '';
@@ -134,23 +134,35 @@ class _NewsScreenState extends State<NewsScreen> {
     }
 
     try {
-      selectedLanguage = lang;
+      List<Map> translatedList = [];
 
-      List<Future<Map>> translationTasks = articles.map((article) async {
-        final translatedTitle = await translateTextUsingAPI(article['title'] ?? '', lang);
-        final translatedDesc = await translateTextUsingAPI(article['description'] ?? '', lang);
+      for (int i = 0; i < articles.length; i++) {
+        final article = articles[i];
 
-        return {
+        setState(() {
+          translationProgress = 'Translating article ${i + 1} of ${articles.length}...';
+        });
+
+        final translatedTitle = await translateTextUsingAPI(
+            article['title'] ?? '',
+            lang
+        );
+
+        final translatedDesc = await translateTextUsingAPI(
+            article['description'] ?? '',
+            lang
+        );
+
+        translatedList.add({
           ...article,
           'title': translatedTitle,
           'description': translatedDesc,
-        };
-      }).toList();
-
-      final translated = await Future.wait(translationTasks);
+        });
+      }
 
       setState(() {
-        translatedArticles = translated;
+        translatedArticles = translatedList;
+        selectedLanguage = lang;
         isTranslating = false;
         translationProgress = '';
       });
@@ -158,7 +170,6 @@ class _NewsScreenState extends State<NewsScreen> {
       setState(() {
         isTranslating = false;
         translationProgress = '';
-        selectedLanguage = 'English';
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${getTranslation('translationFailed')}: $e')),
@@ -166,32 +177,53 @@ class _NewsScreenState extends State<NewsScreen> {
     }
   }
 
-
   Future<String> translateTextUsingAPI(String text, String targetLang) async {
     if (text.isEmpty) return '';
 
     try {
-      // Alternative translation APIs due to LibreTranslate issues
-      // Using MyMemory API as backup
-      final uri = Uri.parse('https://api.mymemory.translated.net/get');
-      final queryParams = {
+      // Method 1: Using Google Translate API (Free tier)
+      final googleTranslateUrl = 'https://translate.googleapis.com/translate_a/single';
+      final googleParams = {
+        'client': 'gtx',
+        'sl': 'en',
+        'tl': targetLang == 'Hindi' ? 'hi' : 'mr',
+        'dt': 't',
+        'q': text,
+      };
+
+      final googleResponse = await http.get(
+        Uri.parse(googleTranslateUrl).replace(queryParameters: googleParams),
+      );
+
+      if (googleResponse.statusCode == 200) {
+        final decoded = json.decode(googleResponse.body);
+        if (decoded != null && decoded[0] != null && decoded[0][0] != null) {
+          return decoded[0][0][0] ?? text;
+        }
+      }
+
+      // Method 2: MyMemory API (backup)
+      final myMemoryUrl = 'https://api.mymemory.translated.net/get';
+      final myMemoryParams = {
         'q': text,
         'langpair': 'en|${targetLang == 'Hindi' ? 'hi' : 'mr'}',
       };
 
-      final response = await http.get(uri.replace(queryParameters: queryParams));
+      final myMemoryResponse = await http.get(
+        Uri.parse(myMemoryUrl).replace(queryParameters: myMemoryParams),
+      );
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+      if (myMemoryResponse.statusCode == 200) {
+        final data = json.decode(myMemoryResponse.body);
         if (data['responseStatus'] == 200) {
           return data['responseData']['translatedText'] ?? text;
         }
       }
 
-      // If MyMemory fails, try LibreTranslate
-      final libretranslateUri = Uri.parse('https://libretranslate.de/translate');
+      // Method 3: LibreTranslate (backup)
+      final libretranslateUrl = 'https://libretranslate.de/translate';
       final libretranslateResponse = await http.post(
-        libretranslateUri,
+        Uri.parse(libretranslateUrl),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'q': text,
@@ -206,11 +238,11 @@ class _NewsScreenState extends State<NewsScreen> {
         return data['translatedText'] ?? text;
       }
 
-      print('Translation API error: ${libretranslateResponse.statusCode}');
-      return text; // Return original text if translation fails
+      print('All translation methods failed');
+      return text;
     } catch (e) {
       print('Translation error: $e');
-      return text; // Return original text if translation fails
+      return text;
     }
   }
 
@@ -230,7 +262,9 @@ class _NewsScreenState extends State<NewsScreen> {
             child: DropdownButton<String>(
               value: selectedLanguage,
               onChanged: isTranslating ? null : (String? newLang) {
-                if (newLang != null) translateArticles(newLang);
+                if (newLang != null) {
+                  translateArticles(newLang);
+                }
               },
               items: ['English', 'Hindi', 'Marathi']
                   .map((lang) => DropdownMenuItem(
@@ -277,6 +311,14 @@ class _NewsScreenState extends State<NewsScreen> {
               getTranslation('wait'),
               style: TextStyle(fontSize: 16),
             ),
+            if (translationProgress.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Text(
+                  translationProgress,
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                ),
+              ),
           ],
         ),
       )
