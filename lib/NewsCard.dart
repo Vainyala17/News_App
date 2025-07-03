@@ -134,21 +134,6 @@ class _NewsCardState extends State<NewsCard> {
                     color: Colors.blue.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.link, size: 16, color: Colors.blue),
-                      SizedBox(width: 4),
-                      Text(
-                        'View Full Article',
-                        style: TextStyle(
-                          color: Colors.blue,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
               ),
           ],
