@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -19,6 +21,9 @@ class _NewsScreenState extends State<NewsScreen> {
   String selectedLanguage = 'English';
   bool isLoading = false;
   bool isTranslating = false;
+  bool useStaticNews = false;
+
+
   String translationProgress = '';
 
   // Replace with your actual NewsAPI key
@@ -81,6 +86,16 @@ class _NewsScreenState extends State<NewsScreen> {
   void initState() {
     super.initState();
     fetchNews();
+    useStaticNews ? loadStaticNews() : fetchNews();
+  }
+  Future<void> loadStaticNews() async {
+    final String response = await rootBundle.loadString('assets/news.json');
+    final List data = json.decode(response);
+    setState(() {
+      articles = data;
+      translatedArticles = List.from(data);
+      isLoading = false;
+    });
   }
 
   Future<void> fetchNews() async {
