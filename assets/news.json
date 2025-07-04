@@ -1,0 +1,37 @@
+[
+  {
+    "title": "India wins Asia Cup 2025",
+    "description": "India defeated Pakistan in the final match with a thrilling performance.",
+    "urlToImage": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRVBoMiL4pgkX0idTOs9zUpbHpD5kCiTOz5Nw&s",
+    "source": { "name": "TOI" },
+    "url": "https://timesofindia.indiatimes.com/sports/cricket/asia-cup"
+  },
+  {
+    "title": "ISRO successfully launches Gaganyaan",
+    "description": "India's first crewed space mission has been launched from Sriharikota.",
+    "urlToImage": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRs8ji-L3UInx1OcJfyFRxUWF-rSX0PBZbvtQ&s",
+    "source": { "name": "TOI" },
+    "url": "https://www.isro.gov.in"
+  },
+  {
+    "title": "Mumbai Metro Line 3 nears completion",
+    "description": "The Mumbai Metro Line 3 is expected to be completed by December and reduce road traffic significantly.",
+    "urlToImage": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9_8VRugD5F3ZQCoTG7311svPebsd9l_voEg&s",
+    "source": { "name": "Hindustan Times" },
+    "url": "https://www.hindustantimes.com/cities/mumbai-news"
+  },
+  {
+    "title": "Chandrayaan-4 to explore moon’s dark side",
+    "description": "ISRO's upcoming Chandrayaan-4 mission will target the lesser-explored dark side of the moon.",
+    "urlToImage": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSVHGxWr3jH0X8lnavHchq67w9vBLgR8iTBkw&s",
+    "source": { "name": "NDTV" },
+    "url": "https://www.ndtv.com/science/chandrayaan-4"
+  },
+  {
+    "title": "National Education Policy 2025 announced",
+    "description": "The NEP 2025 focuses on skill-based education and AI-integrated curriculum from Grade 6 onwards.",
+    "urlToImage": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRX1Hs20teFNFcjwS_JW4qPR96UnZvSD2q41w&s",
+    "source": { "name": "Indian Express" },
+    "url": "https://indianexpress.com/article/education/nep-2025"
+  }
+]

@@ -1,6 +1,7 @@
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 
 class NewsCard extends StatefulWidget {
   final Map article;
@@ -15,6 +16,17 @@ class NewsCard extends StatefulWidget {
 
 class _NewsCardState extends State<NewsCard> {
   bool isExpanded = false;
+  late FlutterTts flutterTts;
+
+  @override
+  void initState() {
+    super.initState();
+    flutterTts = FlutterTts();
+  }
+
+  void speak(String text) async {
+    await flutterTts.speak(text);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,23 +115,36 @@ class _NewsCardState extends State<NewsCard> {
 
             // Source
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(Icons.source, size: 18, color: Colors.grey[600]),
-                SizedBox(width: 6),
-                Text(
-                  '${widget.getTranslation('source')}: ${widget.article['source']?['name'] ?? 'Unknown'}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
+                Row(
+                  children: [
+                    Icon(Icons.source, size: 18, color: Colors.grey[600]),
+                    SizedBox(width: 6),
+                    Text(
+                      '${widget.getTranslation('source')}: ${widget.article['source']?['name'] ?? 'Unknown'}',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600], fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+                IconButton(
+                  icon: Icon(Icons.volume_up, color: Colors.blue),
+                  onPressed: () {
+                    speak(widget.article['description'] ?? '');
+                  },
                 ),
               ],
             ),
-
             // Tap to view full article
             if (widget.article['url'] != null)
-              GestureDetector(
+              Container(
+                margin: EdgeInsets.only(top: 12),
+                padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              child: GestureDetector(
                 onTap: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -127,14 +152,11 @@ class _NewsCardState extends State<NewsCard> {
                     ),
                   );
                 },
-                child: Container(
-                  margin: EdgeInsets.only(top: 12),
-                  padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
+                child: Text(
+                  widget.getTranslation('readMore'),
+                  style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
                 ),
+              )
               ),
           ],
         ),
