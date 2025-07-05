@@ -2,6 +2,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class NewsCard extends StatefulWidget {
   final Map article;
@@ -16,15 +18,67 @@ class NewsCard extends StatefulWidget {
 
 class _NewsCardState extends State<NewsCard> {
   bool isExpanded = false;
+  double pitch = 1.0;
   late FlutterTts flutterTts;
+  late stt.SpeechToText _speech;
+  bool isListening = false;
 
   @override
   void initState() {
     super.initState();
     flutterTts = FlutterTts();
+    _speech = stt.SpeechToText();
+    requestMicPermission();
+  }
+
+  void startListening(String textToRead) async {
+    if (!_speech.isListening) {
+      bool available = await _speech.initialize(
+        onStatus: (status) => print('Status: $status'),
+        onError: (error) => print('Error: $error'),
+      );
+      if (!available) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Speech recognition not available")),
+        );
+        return;
+      }
+
+      setState(() => isListening = true);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("🎤 Listening... Say 'start' or 'stop'")),
+      );
+
+      _speech.listen(
+        onResult: (result) {
+          final command = result.recognizedWords.toLowerCase();
+          if (command.contains("start")) {
+            speak(textToRead);
+          } else if (command.contains("stop")) {
+            flutterTts.stop();
+          }
+        },
+      );
+    }
+  }
+
+  Future<void> requestMicPermission() async {
+    var status = await Permission.microphone.status;
+    if (!status.isGranted) {
+      await Permission.microphone.request();
+    }
+  }
+
+  @override
+  void dispose() {
+    _speech.stop();
+    flutterTts.stop();
+    super.dispose();
   }
 
   void speak(String text) async {
+    await flutterTts.setPitch(pitch); // Add this
     await flutterTts.speak(text);
   }
 
@@ -61,6 +115,25 @@ class _NewsCardState extends State<NewsCard> {
                   ),
                 ),
               ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Pitch Control", style: TextStyle(fontSize: 14)),
+                Slider(
+                  min: 0.5,
+                  max: 2.0,
+                  divisions: 6,
+                  value: pitch,
+                  label: pitch.toStringAsFixed(1),
+                  onChanged: (value) {
+                    setState(() {
+                      pitch = value;
+                      flutterTts.setPitch(pitch);
+                    });
+                  },
+                ),
+              ],
+            ),
 
             // Title with bigger font
             Text(
@@ -112,52 +185,33 @@ class _NewsCardState extends State<NewsCard> {
                 ],
               ),
             SizedBox(height: 12),
-
-            // Source
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Icon(Icons.source, size: 18, color: Colors.grey[600]),
-                    SizedBox(width: 6),
-                    Text(
-                      '${widget.getTranslation('source')}: ${widget.article['source']?['name'] ?? 'Unknown'}',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600], fontWeight: FontWeight.w500),
-                    ),
-                  ],
+                Text(
+                  '${widget.getTranslation('source')}: ${widget.article['source']?['name'] ?? 'Unknown'}',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600], fontWeight: FontWeight.w500),
                 ),
+              ],
+            ),
+            Row(
+              children: [
                 IconButton(
-                  icon: Icon(Icons.volume_up, color: Colors.blue),
+                  icon: Icon(Icons.volume_up, color: Colors.green),
                   onPressed: () {
                     speak(widget.article['description'] ?? '');
                   },
                 ),
+                IconButton(
+                  icon: Icon(Icons.mic, color: isListening ? Colors.red : Colors.blue),
+                  onPressed: isListening ? null : () {
+                    if ((widget.article['description'] ?? '').isNotEmpty) {
+                      startListening(widget.article['description'] ?? '');
+                    }
+                  },
+                ),
               ],
-            ),
-            // Tap to view full article
-            if (widget.article['url'] != null)
-              Container(
-                margin: EdgeInsets.only(top: 12),
-                padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              child: GestureDetector(
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('${widget.getTranslation('articleUrl')}: ${widget.article['url']}'),
-                    ),
-                  );
-                },
-                child: Text(
-                  widget.getTranslation('readMore'),
-                  style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-                ),
-              )
-              ),
+            )
           ],
         ),
       ),
