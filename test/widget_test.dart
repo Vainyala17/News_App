@@ -4,7 +4,7 @@ import 'package:newsapp_multilang/main.dart';
 
 void main() {
   testWidgets('Language dropdown displays and switches language', (WidgetTester tester) async {
-    await tester.pumpWidget(MaterialApp(home: NewsScreen()));
+    await tester.pumpWidget(MaterialApp(home: NewsScreen(useStatic: true,)));
 
     // Check if dropdown exists
     expect(find.byType(DropdownButton<String>), findsOneWidget);

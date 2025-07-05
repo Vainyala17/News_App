@@ -4,16 +4,24 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+import 'HomePage.dart';
 import 'NewsCard.dart';
 
 void main() {
-  runApp(MaterialApp(home: NewsScreen()));
+    runApp(MaterialApp(
+      home: HomePage(),
+      debugShowCheckedModeBanner: false,
+    ));
 }
 
 class NewsScreen extends StatefulWidget {
+  final bool useStatic;
+  const NewsScreen({super.key, required this.useStatic});
+
   @override
   _NewsScreenState createState() => _NewsScreenState();
 }
+
 
 class _NewsScreenState extends State<NewsScreen> {
   List articles = [];
@@ -83,11 +91,14 @@ class _NewsScreenState extends State<NewsScreen> {
   }
 
   @override
+  @override
   void initState() {
     super.initState();
-    fetchNews();
-    useStaticNews ? loadStaticNews() : fetchNews();
+    widget.useStatic ? loadStaticNews() : fetchNews();
   }
+
+
+
   Future<void> loadStaticNews() async {
     final String response = await rootBundle.loadString('assets/news.json');
     final List data = json.decode(response);
@@ -265,12 +276,6 @@ class _NewsScreenState extends State<NewsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          getTranslation('appTitle'),
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
@@ -295,6 +300,12 @@ class _NewsScreenState extends State<NewsScreen> {
             ),
           ),
         ],
+        title: Text(
+          getTranslation('appTitle'),
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
       ),
       body: isLoading
           ? Center(
